@@ -61,11 +61,12 @@ axiosInstance.interceptors.response.use(
     ========================= */
 
     // ❗ KHÔNG redirect khi login/register
+    const API = import.meta.env.VITE_API_URL;
     const authRoutes = [
-      "/users/login",
-      "/users/register",
-      "/users/forgot-password",
-      "/users/reset-password",
+      `${API}/users/login`,
+      `${API}/users/register`,
+      `${API}/users/forgot-password`,
+      `${API}/users/reset-password`,
     ];
 
     const isAuthRequest = authRoutes.some((route) =>
