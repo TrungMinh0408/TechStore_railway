@@ -3,7 +3,7 @@ const API = import.meta.env.VITE_API_URL;
 
 export const loginApi = (data) => {
   console.log("LOGIN DATA SEND:", data);
-  return axiosInstance.post(`${API}/users/login`, data);
+  return axiosInstance.post(`/users/login`, data);
 };
 
 export const getProfileApi = () => {
