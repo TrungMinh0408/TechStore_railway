@@ -2,7 +2,7 @@ import crypto from "crypto";
 import qs from "qs";
 import { checkoutPOS } from "./checkoutController.js";
 // 🔹 Tạo URL thanh toán
-import Payment from "../../models/Payment.js";
+import Payment from "../../models/payment.js";
 
 const tmnCode = "SU21PQ63";
 const secretKey = "9FJI4T0C621LXY5NKSJDUG1AVWG2QY6K";

@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 import Sale from "../../models/Sale.js";
-import Payment from "../../models/Payment.js";
+import Payment from "../../models/payment.js";
 import Inventory from "../../models/Inventories.js";
 import StockMovement from "../../models/StockMovement.js";
 import Log from "../../models/Log.js";
