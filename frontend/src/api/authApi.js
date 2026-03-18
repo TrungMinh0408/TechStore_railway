@@ -1,16 +1,17 @@
 import axiosInstance from "../utils/axios";
+const API = import.meta.env.VITE_API_URL;
 
 export const loginApi = (data) => {
   console.log("LOGIN DATA SEND:", data);
-  return axiosInstance.post("/users/login", data);
+  return axiosInstance.post(`${API}/users/login`, data);
 };
 
 export const getProfileApi = () => {
-  return axiosInstance.get("/users/profile");
+  return axiosInstance.get(`${API}/users/profile`);
 };
 
 export const forgotPasswordApi = (data) => {
-  return axiosInstance.post("/users/forgot-password", data);
+  return axiosInstance.post(`${API}/users/forgot-password`, data);
 };
 
 export const resetPasswordApi = (token, data) => {
