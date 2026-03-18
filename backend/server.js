@@ -50,7 +50,7 @@ app.use(express.urlencoded({ extended: true }));
 // app.use("/public", express.static(path.join(__dirname, "public")));
 
 //  Routes 
-app.use("/api/users", userRoutes);
+app.use("/users", userRoutes);
 app.use("/api/admin/branches", branchRoutes);
 app.use("/api/admin/accounts", accountRoutes);
 app.use("/api/admin/categories", categoryRoutes);
