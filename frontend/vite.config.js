@@ -12,7 +12,7 @@ export default defineConfig({
     proxy: {
 
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://techstorerailway-copy-production.up.railway.app',
         changeOrigin: true,
         secure: false,
       }
