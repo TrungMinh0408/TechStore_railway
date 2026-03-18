@@ -94,7 +94,7 @@ export default function BranchPersonnelUpdate() {
       // ❌ đã thuộc chi nhánh hiện tại thì không hiện
       .filter((u) => !assignedIds.has(u?._id))
       // ✅ NEW: đã thuộc chi nhánh khác (bất kỳ) thì ẩn luôn
-      // (vì assignedUserIds chứa tất cả userId đang nằm trong userBranches)
+      // (vì assignedUserIds chứa tất cả userId đang nằm trong UserBranches)
       .filter((u) => !assignedUserIds.has(String(u?._id)))
       .filter((u) => {
         if (!normalizedQ) return true;

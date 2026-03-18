@@ -2,7 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Log from "../models/Log.js";
-import UserBranch from "../models/userBranches.js";
+import UserBranch from "../models/UserBranches.js";
 import crypto from "crypto";
 import { sendResetEmail } from "../ultis/mailer.js";
 /** Generate JWT */

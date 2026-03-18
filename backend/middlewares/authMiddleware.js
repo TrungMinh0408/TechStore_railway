@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import UserBranch from "../models/userBranches.js";
+import UserBranch from "../models/UserBranches.js";
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;

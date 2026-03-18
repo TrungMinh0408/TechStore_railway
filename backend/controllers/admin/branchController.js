@@ -1,5 +1,5 @@
 import Branch from "../../models/Branch.js";
-import UserBranch from "../../models/userBranches.js";
+import UserBranch from "../../models/UserBranches.js";
 import mongoose from "mongoose";
 
 export const create = async (req, res) => {

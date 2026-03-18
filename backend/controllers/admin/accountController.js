@@ -1,5 +1,5 @@
 import User from "../../models/User.js";
-import UserBranch from "../../models/userBranches.js";
+import UserBranch from "../../models/UserBranches.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../../ultis/cloudinary.js";
 import mongoose from "mongoose";

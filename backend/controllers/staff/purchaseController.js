@@ -6,7 +6,7 @@ import Product from "../../models/Product.js";
 import Supplier from "../../models/Supplier.js";
 import Branch from "../../models/Branch.js";
 import User from "../../models/User.js";
-import UserBranch from "../../models/userBranches.js";
+import UserBranch from "../../models/UserBranches.js";
 import Log from "../../models/Log.js";
 
 export const createPurchase = async (req, res) => {

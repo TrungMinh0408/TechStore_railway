@@ -1,4 +1,4 @@
-import UserBranch from "../../models/userBranches.js";
+import UserBranch from "../../models/UserBranches.js";
 import mongoose from "mongoose";
 
 
