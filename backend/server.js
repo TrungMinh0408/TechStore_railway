@@ -42,8 +42,13 @@ const __dirname = path.dirname(__filename);
 connectDB();
 
 //  Middlewares
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://techstorerailway-copy-production.up.railway.app"
+  ],
+  credentials: true
+})); app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
