@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://techstorerailway-copy-production.up.railway.app",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "https://techstorerailway-copy-production.up.railway.app",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -21,7 +23,7 @@ axiosInstance.interceptors.request.use(
 
     if (import.meta.env.MODE === "development") {
       console.log(
-        `[Request] ${config.method?.toUpperCase()} -> ${config.url}`
+        `[Request] ${config.method?.toUpperCase()} -> ${config.baseURL}${config.url}`
       );
     }
 
@@ -35,10 +37,9 @@ axiosInstance.interceptors.request.use(
 ========================= */
 axiosInstance.interceptors.response.use(
   (response) => {
-
     if (import.meta.env.MODE === "development") {
       console.log(
-        `[Response] ${response.status} <- ${response.config.url}`
+        `[Response] ${response.status} <- ${response.config.baseURL}${response.config.url}`
       );
     }
 
@@ -46,10 +47,9 @@ axiosInstance.interceptors.response.use(
   },
 
   (error) => {
-
     if (import.meta.env.MODE === "development") {
       console.error(
-        `[Error] ${error.response?.status} <- ${error.config?.url}`
+        `[Error] ${error.response?.status} <- ${error.config?.baseURL}${error.config?.url}`
       );
     }
 
@@ -57,22 +57,22 @@ axiosInstance.interceptors.response.use(
     const url = error.config?.url || "";
 
     /* =========================
-       TOKEN HẾT HẠN
+       AUTH ROUTES (FIXED)
     ========================= */
-
-    // ❗ KHÔNG redirect khi login/register
-    const API = import.meta.env.VITE_API_URL;
     const authRoutes = [
-      `${API}/users/login`,
-      `${API}/users/register`,
-      `${API}/users/forgot-password`,
-      `${API}/users/reset-password`,
+      "/users/login",
+      "/users/register",
+      "/users/forgot-password",
+      "/users/reset-password",
     ];
 
     const isAuthRequest = authRoutes.some((route) =>
-      url.includes(route)
+      url.startsWith(route)
     );
 
+    /* =========================
+       TOKEN HẾT HẠN
+    ========================= */
     if (status === 401 && !isAuthRequest) {
       console.warn("Token expired → logging out");
 
@@ -85,7 +85,6 @@ axiosInstance.interceptors.response.use(
     /* =========================
        KHÔNG CÓ QUYỀN
     ========================= */
-
     if (status === 403) {
       window.location.href = "/NotFound";
     }
