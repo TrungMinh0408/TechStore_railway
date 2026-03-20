@@ -83,7 +83,8 @@ app.get("/", (req, res) => {
 });
 
 app.use((req, res, next) => {
-  res.status(404).json({ message: "Đường dẫn (Route) không tồn tại" });
+  console.log("👉 REQUEST:", req.method, req.originalUrl);
+  next();
 });
 
 app.use((err, req, res, next) => {
