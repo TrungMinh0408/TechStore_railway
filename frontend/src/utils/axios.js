@@ -5,6 +5,7 @@ const axiosInstance = axios.create({
     import.meta.env.VITE_API_URL ||
     "https://techstorerailway-production.up.railway.app/api",
   timeout: 10000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
