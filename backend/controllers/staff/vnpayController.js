@@ -4,10 +4,10 @@ import { checkoutPOS } from "./checkoutController.js";
 // 🔹 Tạo URL thanh toán
 import Payment from "../../models/payment.js";
 
-const tmnCode = "SU21PQ63";
-const secretKey = "9FJI4T0C621LXY5NKSJDUG1AVWG2QY6K";
+const tmnCode = "HOQSPK33";
+const secretKey = "BDNAIEK6P8RGMFXU9XOI55BNFRP60E4B";
 const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-const returnUrl = "http://localhost:5173/vnpay-return";
+const returnUrl = "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
 function sortObject(obj) {
     return Object.keys(obj)
