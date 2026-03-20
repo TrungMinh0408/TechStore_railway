@@ -15,7 +15,7 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 
 // protected
-// router.use(authMiddleware);
+router.use(authMiddleware);
 router.get("/profile", getProfile);
 
 export default router;
