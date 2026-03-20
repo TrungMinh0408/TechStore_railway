@@ -44,7 +44,7 @@ connectDB();
 //  Middlewares
 app.use(cors({
   origin: [
-    "http://localhost:5173",
+    // "http://localhost:5173",
     "https://techstorerailway-copy-production.up.railway.app"
   ],
   credentials: true
