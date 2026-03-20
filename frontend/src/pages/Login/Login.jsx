@@ -41,13 +41,17 @@ export default function Login() {
             toast.success("Đăng nhập thành công ");
 
         } catch (err) {
+            console.error("🔥 FULL ERROR:", err);
 
-            if (err.response?.status === 401) {
-                toast.error("Email hoặc mật khẩu không chính xác");
+            if (err.response) {
+                console.error("👉 STATUS:", err.response.status);
+                console.error("👉 DATA:", err.response.data);
+
+                toast.error(err.response.data?.message || "Server error");
             } else {
-                toast.error("Có lỗi xảy ra, vui lòng thử lại");
+                console.error("👉 NO RESPONSE:", err.message);
+                toast.error("Không kết nối được server");
             }
-
         } finally {
             setLoading(false);
         }
