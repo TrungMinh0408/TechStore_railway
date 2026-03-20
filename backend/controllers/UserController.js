@@ -15,153 +15,143 @@ const generateToken = (payload) => {
 /**
  * LOGIN
  */
-// export const login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     if (!email || !password) {
-//       return res.status(400).json({
-//         message: "Missing email or password",
-//       });
-//     }
-
-//     // tìm user
-//     const user = await User.findOne({
-//       email: email.toLowerCase().trim(),
-//     });
-
-//     if (!user) {
-//       return res.status(404).json({
-//         message: "Email not found",
-//       });
-//     }
-
-//     // check password
-//     const isMatch = await bcrypt.compare(password, user.password);
-
-//     if (!isMatch) {
-//       return res.status(401).json({
-//         message: "Wrong password",
-//       });
-//     }
-
-//     /**
-//      * =========================
-//      * ADMIN LOGIN
-//      * =========================
-//      */
-
-//     if (user.role === "admin") {
-//       await User.updateOne(
-//         { _id: user._id },
-//         { $set: { lastLoginAt: new Date() } }
-//       );
-
-//       const token = generateToken({
-//         id: user._id.toString(),
-//         role: user.role,
-//         branchId: null,
-//         branchRole: null,
-//       });
-
-//       return res.json({
-//         message: "Admin login success",
-//         token,
-//         user: {
-//           id: user._id,
-//           name: user.name,
-//           email: user.email,
-//           role: user.role,
-//           branchId: null,
-//           branchRole: null,
-//         },
-//       });
-//     }
-
-//     /**
-//      * =========================
-//      * STAFF / BRANCH LOGIN
-//      * =========================
-//      */
-
-//     if (!user.isActive) {
-//       return res.status(403).json({
-//         message: "Account has been blocked",
-//       });
-//     }
-
-//     // tìm branch user
-//     const userBranch = await UserBranch.findOne({
-//       userId: user._id,
-//     });
-
-//     if (!userBranch) {
-//       return res.status(403).json({
-//         message: "User not assigned to any branch",
-//       });
-//     }
-
-//     // update last login
-//     await User.updateOne(
-//       { _id: user._id },
-//       { $set: { lastLoginAt: new Date() } }
-//     );
-
-//     // tạo token
-//     const token = generateToken({
-//       id: user._id.toString(),
-//       role: user.role,
-//       branchId: userBranch.branchId.toString(),
-//       branchRole: userBranch.role,
-//     });
-
-//     /**
-//      * CREATE LOGIN LOG
-//      */
-//     Log.create({
-//       level: "INFO",
-//       actorId: user._id,
-//       branchId: userBranch.branchId,
-//       action: "LOGIN",
-//       targetType: "USER",
-//       targetId: user._id,
-//       message: "Staff login success",
-//       status: "SUCCESS",
-//       ip: req.ip,
-//       device: req.headers["user-agent"],
-//     }).catch((err) => {
-//       console.error("LOG ERROR:", err);
-//     });
-
-//     return res.json({
-//       message: "Login success",
-//       token,
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         role: user.role,
-//         branchId: userBranch.branchId,
-//         branchRole: userBranch.role,
-//       },
-//     });
-//   } catch (err) {
-//     console.error("LOGIN ERROR:", err);
-
-//     return res.status(500).json({
-//       message: "Server error",
-//     });
-//   }
-// };
-
 export const login = async (req, res) => {
-  console.log("🔥 LOGIN API HIT");
-  console.log("Body:", req.body);
+  try {
+    const { email, password } = req.body;
 
-  return res.status(200).json({
-    message: "LOGIN API OK",
-    receivedData: req.body,
-  });
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Missing email or password",
+      });
+    }
+
+    // tìm user
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Email not found",
+      });
+    }
+
+    // check password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Wrong password",
+      });
+    }
+
+    /**
+     * =========================
+     * ADMIN LOGIN
+     * =========================
+     */
+
+    if (user.role === "admin") {
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { lastLoginAt: new Date() } }
+      );
+
+      const token = generateToken({
+        id: user._id.toString(),
+        role: user.role,
+        branchId: null,
+        branchRole: null,
+      });
+
+      return res.json({
+        message: "Admin login success",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          branchId: null,
+          branchRole: null,
+        },
+      });
+    }
+
+    /**
+     * =========================
+     * STAFF / BRANCH LOGIN
+     * =========================
+     */
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: "Account has been blocked",
+      });
+    }
+
+    // tìm branch user
+    const userBranch = await UserBranch.findOne({
+      userId: user._id,
+    });
+
+    if (!userBranch) {
+      return res.status(403).json({
+        message: "User not assigned to any branch",
+      });
+    }
+
+    // update last login
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { lastLoginAt: new Date() } }
+    );
+
+    // tạo token
+    const token = generateToken({
+      id: user._id.toString(),
+      role: user.role,
+      branchId: userBranch.branchId.toString(),
+      branchRole: userBranch.role,
+    });
+
+    /**
+     * CREATE LOGIN LOG
+     */
+    Log.create({
+      level: "INFO",
+      actorId: user._id,
+      branchId: userBranch.branchId,
+      action: "LOGIN",
+      targetType: "USER",
+      targetId: user._id,
+      message: "Staff login success",
+      status: "SUCCESS",
+      ip: req.ip,
+      device: req.headers["user-agent"],
+    }).catch((err) => {
+      console.error("LOG ERROR:", err);
+    });
+
+    return res.json({
+      message: "Login success",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        branchId: userBranch.branchId,
+        branchRole: userBranch.role,
+      },
+    });
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
 };
 
 /**
