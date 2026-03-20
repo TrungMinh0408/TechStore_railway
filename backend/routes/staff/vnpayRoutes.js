@@ -3,8 +3,8 @@ import { createPayment, vnpayIPN } from "../../controllers/staff/vnpayController
 import authMiddleware from "../../middlewares/authMiddleware.js";
 
 const router = express.Router();
-router.post("/create", authMiddleware, createPayment);
-router.get("/ipn", authMiddleware, vnpayIPN);
+router.post("/create", createPayment);
+router.get("/ipn", vnpayIPN);
 
 
 export default router;
