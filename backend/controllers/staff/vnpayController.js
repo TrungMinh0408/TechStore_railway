@@ -9,11 +9,6 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= CLEAN PARAMS ================= */
-import crypto from "crypto";
-import qs from "qs";
-import Payment from "../../models/payment.js";
-
 /* ================= CLEAN ================= */
 function cleanParams(obj) {
     const res = {};
