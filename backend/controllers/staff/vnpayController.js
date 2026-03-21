@@ -11,23 +11,17 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= CLEAN ================= */
-function cleanParams(obj) {
-    const res = {};
-    for (const k in obj) {
-        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
-            res[k] = obj[k];
-        }
-    }
-    return res;
+/* ================= SIGN FUNCTION (IMPORTANT) ================= */
+function createSignData(params) {
+    return Object.keys(params)
+        .sort()
+        .map((key) => `${key}=${params[key]}`)
+        .join("&");
 }
 
-/* ================= CREATE PAYMENT ================= */
 export const createPayment = async (req, res) => {
     try {
         const { amount } = req.body;
-
-        console.log("===== VNPay CREATE =====");
 
         const payment = await Payment.create({
             amount,
@@ -47,12 +41,12 @@ export const createPayment = async (req, res) => {
             req.socket?.remoteAddress ||
             "127.0.0.1";
 
-        /* ================= PARAMS (IMPORTANT ORDER DOES NOT MATTER HERE) ================= */
-        const vnp_Params = cleanParams({
+        /* ================= PARAMS ================= */
+        const vnp_Params = {
             vnp_Version: "2.1.0",
             vnp_Command: "pay",
             vnp_TmnCode: tmnCode,
-            vnp_Amount: Number(amount) * 100, // ⚠️ MUST BE NUMBER
+            vnp_Amount: amount * 100,
             vnp_CurrCode: "VND",
             vnp_TxnRef: orderId,
             vnp_OrderInfo: "Thanh toan don hang",
@@ -62,43 +56,31 @@ export const createPayment = async (req, res) => {
             vnp_IpAddr: ipAddr,
             vnp_CreateDate: createDate,
             vnp_BankCode: "NCB",
-        });
+        };
 
-        /* ================= SORT ONLY 1 TIME ================= */
-        const sortedParams = Object.keys(vnp_Params)
-            .sort()
-            .reduce((acc, key) => {
-                acc[key] = vnp_Params[key];
-                return acc;
-            }, {});
-
-        /* ================= SIGN STRING (IMPORTANT) ================= */
-        const signData = new URLSearchParams(sortedParams).toString();
+        /* ================= SIGN ================= */
+        const signData = createSignData(vnp_Params);
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
-        /* ================= HASH ================= */
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(Buffer.from(signData, "utf-8"))
             .digest("hex");
 
-        console.log("===== SECURE HASH =====");
+        console.log("===== HASH =====");
         console.log(secureHash);
 
-        /* ================= PAYMENT URL ================= */
+        /* ================= URL ================= */
         const paymentUrl =
             vnpUrl +
             "?" +
             qs.stringify({
-                ...sortedParams,
+                ...vnp_Params,
                 vnp_SecureHashType: "HmacSHA512",
                 vnp_SecureHash: secureHash,
             });
-
-        console.log("===== PAYMENT URL =====");
-        console.log(paymentUrl);
 
         return res.json({ paymentUrl });
     } catch (err) {
