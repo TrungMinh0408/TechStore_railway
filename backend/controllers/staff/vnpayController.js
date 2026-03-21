@@ -12,13 +12,12 @@ const returnUrl =
 /* ================= CLEAN PARAMS ================= */
 function cleanParams(obj) {
     const res = {};
-    Object.keys(obj)
-        .forEach((key) => {
-            const value = obj[key];
-            if (value !== undefined && value !== null && value !== "") {
-                res[key] = value;
-            }
-        });
+    for (const key in obj) {
+        const value = obj[key];
+        if (value !== undefined && value !== null && value !== "") {
+            res[key] = value;
+        }
+    }
     return res;
 }
 
@@ -76,7 +75,7 @@ export const createPayment = async (req, res) => {
         /* ================= SORT ================= */
         vnp_Params = sortParams(vnp_Params);
 
-        /* ================= SIGN STRING (CRITICAL) ================= */
+        /* ================= SIGN DATA (ABSOLUTE STANDARD) ================= */
         const signData = Object.keys(vnp_Params)
             .sort()
             .map((key) => `${key}=${vnp_Params[key]}`)
@@ -85,7 +84,7 @@ export const createPayment = async (req, res) => {
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
-        /* ================= SIGN HASH ================= */
+        /* ================= HASH ================= */
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(Buffer.from(signData, "utf-8"))
