@@ -5,36 +5,32 @@ import UserBranch from "../models/UserBranches.js";
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  console.log("AUTH CHECK");
+  console.log("========== AUTH CHECK ==========");
   console.log("Full Authorization Header:", authHeader);
 
   const token = authHeader?.split(" ")[1];
 
   if (!token) {
-    console.error("Result: Token not found in Header");
+    console.error("❌ Token not found in header");
     return res.status(401).json({ message: "Không có token" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    console.log("Token Decoded:", decoded);
+    console.log("========== TOKEN DECODED ==========");
+    console.log(decoded);
 
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      console.error(
-        `Result: The token is correct, but the User ID ${decoded.id} is no longer in the database.`
-      );
+      console.error("❌ User not found in DB:", decoded.id);
 
       return res.status(404).json({
         message: "Người dùng không tồn tại",
       });
     }
 
-    /**
-     * CHECK BRANCH ASSIGNMENT
-     */
     let userBranch = null;
 
     if (decoded.branchId) {
@@ -44,13 +40,16 @@ const authMiddleware = async (req, res, next) => {
       });
 
       if (!userBranch) {
+        console.error("❌ User not in branch");
+
         return res.status(403).json({
           message: "User không thuộc branch này",
         });
       }
     }
 
-    console.log("Authenticated User:", {
+    console.log("========== AUTHENTICATED USER ==========");
+    console.log({
       id: user._id,
       email: user.email,
       role: user.role,
@@ -67,9 +66,12 @@ const authMiddleware = async (req, res, next) => {
       isActive: user.isActive,
     };
 
-    next();
+    console.log("========== REQUEST USER SET ==========");
+    console.log(req.user);
+
+    return next(); // ⚠️ QUAN TRỌNG KHÔNG ĐƯỢC THIẾU
   } catch (error) {
-    console.error("Token Verification Error:", error.message);
+    console.error("❌ Token Verification Error:", error.message);
 
     return res.status(401).json({
       message: "Invalid or expired token",
