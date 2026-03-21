@@ -106,3 +106,42 @@ export const createPayment = async (req, res) => {
         return res.status(500).json({ message: err.message });
     }
 };
+
+export const vnpayIPN = async (req, res) => {
+    try {
+        let vnp_Params = { ...req.query };
+
+        const secureHash = vnp_Params.vnp_SecureHash;
+
+        delete vnp_Params.vnp_SecureHash;
+        delete vnp_Params.vnp_SecureHashType;
+
+        const sortedParams = Object.keys(vnp_Params)
+            .sort()
+            .reduce((acc, key) => {
+                acc[key] = vnp_Params[key];
+                return acc;
+            }, {});
+
+        const signData = new URLSearchParams(sortedParams).toString();
+
+        const checkHash = crypto
+            .createHmac("sha512", secretKey)
+            .update(Buffer.from(signData, "utf-8"))
+            .digest("hex");
+
+        console.log("===== IPN DEBUG =====");
+        console.log("SIGN:", signData);
+        console.log("VNPay:", secureHash);
+        console.log("CHECK:", checkHash);
+
+        if (secureHash !== checkHash) {
+            return res.json({ RspCode: "97", Message: "Invalid Signature" });
+        }
+
+        return res.json({ RspCode: "00", Message: "Success" });
+    } catch (err) {
+        console.error(err);
+        return res.json({ RspCode: "99", Message: "Error" });
+    }
+};
