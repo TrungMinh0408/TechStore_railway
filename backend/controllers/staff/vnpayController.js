@@ -15,7 +15,9 @@ const returnUrl =
 function createSignData(params) {
     return Object.keys(params)
         .sort()
-        .map((key) => `${key}=${params[key]}`)
+        .map((key) => {
+            return `${key}=${encodeURIComponent(params[key])}`;
+        })
         .join("&");
 }
 
