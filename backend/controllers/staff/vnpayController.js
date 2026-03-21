@@ -9,16 +9,27 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= SORT ================= */
-function sortObject(obj) {
-    const sorted = {};
+/* ================= CLEAN PARAMS ================= */
+function cleanParams(obj) {
+    const res = {};
     Object.keys(obj)
-        .filter((key) => obj[key] !== undefined && obj[key] !== null && obj[key] !== "")
-        .sort()
         .forEach((key) => {
-            sorted[key] = obj[key];
+            const value = obj[key];
+            if (value !== undefined && value !== null && value !== "") {
+                res[key] = value;
+            }
         });
-    return sorted;
+    return res;
+}
+
+/* ================= SORT PARAMS ================= */
+function sortParams(obj) {
+    return Object.keys(obj)
+        .sort()
+        .reduce((acc, key) => {
+            acc[key] = obj[key];
+            return acc;
+        }, {});
 }
 
 /* ================= CREATE PAYMENT ================= */
@@ -26,7 +37,7 @@ export const createPayment = async (req, res) => {
     try {
         const { amount, items } = req.body;
 
-        console.log("===== CREATE VNPay =====");
+        console.log("===== VNPay CREATE =====");
 
         const payment = await Payment.create({
             items,
@@ -46,7 +57,7 @@ export const createPayment = async (req, res) => {
         const ipAddr = "127.0.0.1";
 
         /* ================= PARAMS ================= */
-        let vnp_Params = {
+        let vnp_Params = cleanParams({
             vnp_Version: "2.1.0",
             vnp_Command: "pay",
             vnp_TmnCode: tmnCode,
@@ -60,12 +71,12 @@ export const createPayment = async (req, res) => {
             vnp_IpAddr: ipAddr,
             vnp_CreateDate: createDate,
             vnp_BankCode: "NCB",
-        };
+        });
 
         /* ================= SORT ================= */
-        vnp_Params = sortObject(vnp_Params);
+        vnp_Params = sortParams(vnp_Params);
 
-        /* ================= SIGN DATA (STRICT VNPay RULE) ================= */
+        /* ================= SIGN STRING (CRITICAL) ================= */
         const signData = Object.keys(vnp_Params)
             .sort()
             .map((key) => `${key}=${vnp_Params[key]}`)
@@ -74,7 +85,7 @@ export const createPayment = async (req, res) => {
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
-        /* ================= HASH ================= */
+        /* ================= SIGN HASH ================= */
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(Buffer.from(signData, "utf-8"))
@@ -101,7 +112,7 @@ export const createPayment = async (req, res) => {
 
         return res.json({ paymentUrl });
     } catch (err) {
-        console.error("VNPay Error:", err);
+        console.error("VNPay ERROR:", err);
         return res.status(500).json({ message: err.message });
     }
 };
@@ -109,14 +120,14 @@ export const createPayment = async (req, res) => {
 /* ================= IPN ================= */
 export const vnpayIPN = async (req, res) => {
     try {
-        let vnp_Params = { ...req.query };
+        let vnp_Params = cleanParams({ ...req.query });
 
         const secureHash = vnp_Params.vnp_SecureHash;
 
         delete vnp_Params.vnp_SecureHash;
         delete vnp_Params.vnp_SecureHashType;
 
-        vnp_Params = sortObject(vnp_Params);
+        vnp_Params = sortParams(vnp_Params);
 
         const signData = Object.keys(vnp_Params)
             .sort()
@@ -128,16 +139,17 @@ export const vnpayIPN = async (req, res) => {
             .update(Buffer.from(signData, "utf-8"))
             .digest("hex");
 
-        console.log("===== IPN CHECK =====");
-        console.log("SIGN DATA:", signData);
-        console.log("VNPay HASH:", secureHash);
-        console.log("OUR HASH:", checkHash);
+        console.log("===== IPN DEBUG =====");
+        console.log("SIGN:", signData);
+        console.log("VNPay:", secureHash);
+        console.log("CHECK:", checkHash);
 
         if (secureHash !== checkHash) {
             return res.json({ RspCode: "97", Message: "Invalid signature" });
         }
 
         const orderId = vnp_Params.vnp_TxnRef;
+
         const payment = await Payment.findById(orderId);
 
         if (!payment) {
