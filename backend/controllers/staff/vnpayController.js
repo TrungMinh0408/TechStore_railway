@@ -10,38 +10,42 @@ const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
 /* ================= CLEAN PARAMS ================= */
+import crypto from "crypto";
+import qs from "qs";
+import Payment from "../../models/payment.js";
+
+/* ================= CLEAN ================= */
 function cleanParams(obj) {
     const res = {};
-    for (const key in obj) {
-        const value = obj[key];
-        if (value !== undefined && value !== null && value !== "") {
-            res[key] = value;
+    for (const k in obj) {
+        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
+            res[k] = obj[k];
         }
     }
     return res;
 }
 
-/* ================= SORT PARAMS ================= */
-function sortParams(obj) {
-    return Object.keys(obj)
+/* ================= SORT ================= */
+function sortObject(obj) {
+    const sorted = {};
+    Object.keys(obj)
         .sort()
-        .reduce((acc, key) => {
-            acc[key] = obj[key];
-            return acc;
-        }, {});
+        .forEach((key) => {
+            sorted[key] = obj[key];
+        });
+    return sorted;
 }
 
 /* ================= CREATE PAYMENT ================= */
-export const createPayment = async (req, res) => {
+export const createVNPay = async (req, res) => {
     try {
-        const { amount, items } = req.body;
+        const { amount } = req.body;
 
         console.log("===== VNPay CREATE =====");
 
         const payment = await Payment.create({
-            items,
-            method: "vnpay",
             amount,
+            method: "vnpay",
             status: "pending",
         });
 
@@ -52,8 +56,11 @@ export const createPayment = async (req, res) => {
             .replace(/[-:TZ.]/g, "")
             .slice(0, 14);
 
-        /* ⚠️ FIX IP (QUAN TRỌNG) */
-        const ipAddr = "127.0.0.1";
+        /* ================= IP (FIX RAILWAY) ================= */
+        const ipAddr =
+            req.headers["x-forwarded-for"]?.split(",")[0] ||
+            req.socket?.remoteAddress ||
+            "127.0.0.1";
 
         /* ================= PARAMS ================= */
         let vnp_Params = cleanParams({
@@ -73,9 +80,9 @@ export const createPayment = async (req, res) => {
         });
 
         /* ================= SORT ================= */
-        vnp_Params = sortParams(vnp_Params);
+        vnp_Params = sortObject(vnp_Params);
 
-        /* ================= SIGN DATA (ABSOLUTE STANDARD) ================= */
+        /* ================= SIGN STRING ================= */
         const signData = Object.keys(vnp_Params)
             .sort()
             .map((key) => `${key}=${vnp_Params[key]}`)
@@ -119,14 +126,14 @@ export const createPayment = async (req, res) => {
 /* ================= IPN ================= */
 export const vnpayIPN = async (req, res) => {
     try {
-        let vnp_Params = cleanParams({ ...req.query });
+        let vnp_Params = { ...req.query };
 
         const secureHash = vnp_Params.vnp_SecureHash;
 
         delete vnp_Params.vnp_SecureHash;
         delete vnp_Params.vnp_SecureHashType;
 
-        vnp_Params = sortParams(vnp_Params);
+        vnp_Params = sortObject(vnp_Params);
 
         const signData = Object.keys(vnp_Params)
             .sort()
@@ -138,50 +145,18 @@ export const vnpayIPN = async (req, res) => {
             .update(Buffer.from(signData, "utf-8"))
             .digest("hex");
 
-        console.log("===== IPN DEBUG =====");
+        console.log("===== VERIFY =====");
         console.log("SIGN:", signData);
         console.log("VNPay:", secureHash);
         console.log("CHECK:", checkHash);
 
         if (secureHash !== checkHash) {
-            return res.json({ RspCode: "97", Message: "Invalid signature" });
+            return res.send("Invalid signature");
         }
 
-        const orderId = vnp_Params.vnp_TxnRef;
-
-        const payment = await Payment.findById(orderId);
-
-        if (!payment) {
-            return res.json({ RspCode: "01", Message: "Not found" });
-        }
-
-        if (payment.status === "completed") {
-            return res.json({ RspCode: "02", Message: "Already processed" });
-        }
-
-        if (vnp_Params.vnp_ResponseCode === "00") {
-            await checkoutPOS(
-                {
-                    body: {
-                        items: payment.items,
-                        paymentMethod: "vnpay",
-                        customerName: "VNPay",
-                    },
-                    user: {
-                        id: payment.staffId,
-                        branchId: payment.branchId,
-                    },
-                },
-                { json: () => { } }
-            );
-
-            payment.status = "completed";
-            await payment.save();
-        }
-
-        return res.json({ RspCode: "00", Message: "Success" });
+        return res.send("Payment success");
     } catch (err) {
         console.error(err);
-        return res.json({ RspCode: "99", Message: "Error" });
+        return res.send("Error");
     }
 };
