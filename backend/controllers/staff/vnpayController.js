@@ -32,7 +32,7 @@ function sortObject(obj) {
 }
 
 /* ================= CREATE PAYMENT ================= */
-export const createVNPay = async (req, res) => {
+export const createPayment = async (req, res) => {
     try {
         const { amount } = req.body;
 
