@@ -81,6 +81,8 @@ export const createPayment = async (req, res) => {
                 vnp_SecureHashType: "HmacSHA512",
                 vnp_SecureHash: secureHash,
             });
+        console.log("===== PAYMENT URL =====");
+        console.log(paymentUrl);
 
         return res.json({ paymentUrl });
     } catch (err) {
