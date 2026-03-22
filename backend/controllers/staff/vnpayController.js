@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import qs from "qs";
 import Payment from "../../models/payment.js";
 
 /* ================= CONFIG ================= */
@@ -12,14 +11,26 @@ const returnUrl =
 
 /* ================= SORT ================= */
 function sortObject(obj) {
-    let sorted = {};
-    let keys = Object.keys(obj).sort();
+    return Object.keys(obj)
+        .sort()
+        .reduce((acc, key) => {
+            acc[key] = obj[key];
+            return acc;
+        }, {});
+}
 
-    keys.forEach(key => {
-        sorted[key] = obj[key];
-    });
-
-    return sorted;
+/* ================= BUILD QUERY (CHUẨN VNPAY) ================= */
+function buildQuery(params) {
+    return Object.keys(params)
+        .sort()
+        .map(key => {
+            return (
+                key +
+                "=" +
+                encodeURIComponent(params[key]).replace(/%20/g, "+")
+            );
+        })
+        .join("&");
 }
 
 /* ================= CREATE PAYMENT ================= */
@@ -64,11 +75,10 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        // ✅ SORT
         vnp_Params = sortObject(vnp_Params);
 
-        // 🔥 FIX CHÍNH: SIGN PHẢI ENCODE
-        const signData = qs.stringify(vnp_Params, { encode: true });
+        // 🔥 SIGN (CHUẨN +)
+        const signData = buildQuery(vnp_Params);
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
@@ -85,9 +95,8 @@ export const createPayment = async (req, res) => {
         vnp_Params.vnp_SecureHashType = "HmacSHA512";
         vnp_Params.vnp_SecureHash = secureHash;
 
-        // URL (encode TRUE giống sign)
-        const paymentUrl =
-            vnpUrl + "?" + qs.stringify(vnp_Params, { encode: true });
+        // 🔥 URL = GIỐNG SIGN
+        const paymentUrl = vnpUrl + "?" + buildQuery(vnp_Params);
 
         console.log("===== PAYMENT URL =====");
         console.log(paymentUrl);
@@ -111,8 +120,8 @@ export const vnpayIPN = async (req, res) => {
 
         vnp_Params = sortObject(vnp_Params);
 
-        // 🔥 FIX: encode TRUE luôn
-        const signData = qs.stringify(vnp_Params, { encode: true });
+        // 🔥 VERIFY CHUẨN
+        const signData = buildQuery(vnp_Params);
 
         const checkHash = crypto
             .createHmac("sha512", secretKey)
