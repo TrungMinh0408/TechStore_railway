@@ -4,7 +4,7 @@ import Payment from "../../models/payment.js";
 
 /* ================= CONFIG ================= */
 const tmnCode = "HOQSPK33";
-const secretKey = "BDNAIEK6P8RGMFXU9XOI55BNFRP60E4B".trim();
+const secretKey = "BDNAIEK6P8RGMFXU9XOI55BNFRP60E4B";
 const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
 const returnUrl =
@@ -44,6 +44,7 @@ export const createPayment = async (req, res) => {
             req.socket?.remoteAddress ||
             "127.0.0.1";
 
+        /* ================= PARAMS ================= */
         let vnp_Params = {
             vnp_Version: "2.1.0",
             vnp_Command: "pay",
@@ -60,16 +61,18 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        // 🔥 SORT
+        /* ================= SORT ================= */
         vnp_Params = sortObject(vnp_Params);
 
-        // 🔥 SIGN DATA (KHÔNG ENCODE)
-        const signData = qs.stringify(vnp_Params, { encode: false });
+        /* ================= SIGN DATA (KHÔNG ENCODE) ================= */
+        const signData = Object.keys(vnp_Params)
+            .map((key) => `${key}=${vnp_Params[key]}`)
+            .join("&");
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
-        // 🔥 HASH
+        /* ================= HASH ================= */
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(signData, "utf-8")
@@ -78,7 +81,7 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        // 🔥 FINAL URL (CÓ ENCODE)
+        /* ================= URL (CÓ ENCODE) ================= */
         const paymentUrl =
             vnpUrl +
             "?" +
@@ -113,7 +116,10 @@ export const vnpayIPN = async (req, res) => {
 
         vnp_Params = sortObject(vnp_Params);
 
-        const signData = qs.stringify(vnp_Params, { encode: false });
+        /* KHÔNG ENCODE */
+        const signData = Object.keys(vnp_Params)
+            .map((key) => `${key}=${vnp_Params[key]}`)
+            .join("&");
 
         const checkHash = crypto
             .createHmac("sha512", secretKey)
