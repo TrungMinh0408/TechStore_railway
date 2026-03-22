@@ -50,15 +50,18 @@ export const createPayment = async (req, res) => {
         };
 
         // 🔥 SORT PARAMS
-        vnp_Params = Object.keys(vnp_Params)
+        const sorted = {};
+        Object.keys(vnp_Params)
             .sort()
-            .reduce((obj, key) => {
-                obj[key] = vnp_Params[key];
-                return obj;
-            }, {});
+            .forEach((key) => {
+                sorted[key] = encodeURIComponent(vnp_Params[key])
+                    .replace(/%20/g, "+"); // 🔥 VNPay dùng + thay vì %20
+            });
 
-        // 🔥 SIGN DATA (KHÔNG encode tay)
-        const signData = qs.stringify(vnp_Params, { encode: false });
+        // 🔥 SIGN DATA
+        const signData = Object.keys(sorted)
+            .map((key) => `${key}=${sorted[key]}`)
+            .join("&");
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
@@ -71,7 +74,7 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        // 🔥 URL (encode tại đây)
+        // 🔥 URL
         const paymentUrl =
             vnpUrl +
             "?" +
