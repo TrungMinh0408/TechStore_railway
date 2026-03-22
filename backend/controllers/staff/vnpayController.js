@@ -39,8 +39,8 @@ export const createPayment = async (req, res) => {
             .slice(0, 14);
 
         let ipAddr =
-            req.headers["x-forwarded-for"] ||
-            req.socket?.remoteAddress ||
+            // req.headers["x-forwarded-for"] ||
+            // req.socket?.remoteAddress ||
             "127.0.0.1";
 
         if (ipAddr.includes(",")) ipAddr = ipAddr.split(",")[0];
