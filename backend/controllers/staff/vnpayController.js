@@ -10,6 +10,17 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
+/* ================= SORT ================= */
+function sortObject(obj) {
+    const sorted = {};
+    Object.keys(obj)
+        .sort()
+        .forEach((key) => {
+            sorted[key] = obj[key];
+        });
+    return sorted;
+}
+
 /* ================= CREATE PAYMENT ================= */
 export const createPayment = async (req, res) => {
     try {
@@ -49,19 +60,13 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        // 🔥 SORT PARAMS
-        const sorted = {};
-        Object.keys(vnp_Params)
-            .sort()
-            .forEach((key) => {
-                sorted[key] = encodeURIComponent(vnp_Params[key])
-                    .replace(/%20/g, "+"); // 🔥 VNPay dùng + thay vì %20
-            });
+        // 🔥 SORT
+        vnp_Params = sortObject(vnp_Params);
 
-        // 🔥 SIGN DATA
-        const signData = Object.keys(sorted)
-            .map((key) => `${key}=${sorted[key]}`)
-            .join("&");
+        // 🔥 SIGN DATA (QUAN TRỌNG NHẤT)
+        const signData = qs.stringify(vnp_Params, {
+            encode: false, // ❗ KHÔNG encode
+        });
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
@@ -74,15 +79,20 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        // 🔥 URL
+        // 🔥 URL (encode thật)
         const paymentUrl =
             vnpUrl +
             "?" +
-            qs.stringify({
-                ...vnp_Params,
-                vnp_SecureHashType: "HmacSHA512",
-                vnp_SecureHash: secureHash,
-            });
+            qs.stringify(
+                {
+                    ...vnp_Params,
+                    vnp_SecureHashType: "HmacSHA512",
+                    vnp_SecureHash: secureHash,
+                },
+                {
+                    encode: true, // encode ở đây
+                }
+            );
 
         console.log("===== PAYMENT URL =====");
         console.log(paymentUrl);
