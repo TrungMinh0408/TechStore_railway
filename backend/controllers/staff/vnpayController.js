@@ -9,17 +9,18 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= BUILD DUY NHẤT ================= */
-// 🔥 DÙNG CHUNG CHO SIGN + URL
+/* ================= ENCODE CHUẨN VNPay ================= */
+// giống Java URLEncoder
+function encodeVNPay(str) {
+    return encodeURIComponent(str).replace(/%20/g, "+");
+}
+
+/* ================= BUILD QUERY (DÙNG CHUNG SIGN + URL) ================= */
 function buildQuery(params) {
     return Object.keys(params)
         .sort()
-        .map(key => {
-            return (
-                key +
-                "=" +
-                encodeURIComponent(params[key]).replace(/%20/g, "+")
-            );
+        .map((key) => {
+            return key + "=" + encodeVNPay(params[key]);
         })
         .join("&");
 }
@@ -61,14 +62,14 @@ export const createPayment = async (req, res) => {
         console.log("========== RAW PARAMS ==========");
         Object.keys(vnp_Params)
             .sort()
-            .forEach(key => {
+            .forEach((key) => {
                 console.log(key + " =", vnp_Params[key]);
             });
 
-        // 🔥 CHUỖI DUY NHẤT
+        // 🔥 CHUỖI DUY NHẤT (SIGN + URL)
         const query = buildQuery(vnp_Params);
 
-        console.log("========== SIGN & URL BASE ==========");
+        console.log("========== QUERY (SIGN DATA) ==========");
         console.log(query);
 
         const secureHash = crypto
@@ -110,11 +111,11 @@ export const vnpayIPN = async (req, res) => {
         console.log("========== IPN RAW ==========");
         Object.keys(vnp_Params)
             .sort()
-            .forEach(key => {
+            .forEach((key) => {
                 console.log(key + " =", vnp_Params[key]);
             });
 
-        // 🔥 DÙNG CÙNG HÀM
+        // 🔥 DÙNG CHUNG LOGIC
         const query = buildQuery(vnp_Params);
 
         const checkHash = crypto
