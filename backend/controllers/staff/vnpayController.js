@@ -40,10 +40,13 @@ export const createPayment = async (req, res) => {
             .replace(/[-:TZ.]/g, "")
             .slice(0, 14);
 
-        const ipAddr =
-            req.headers["x-forwarded-for"]?.split(",")[0] ||
+        let ipAddr =
+            req.headers["x-forwarded-for"] ||
             req.socket?.remoteAddress ||
             "127.0.0.1";
+
+        if (ipAddr.includes(",")) ipAddr = ipAddr.split(",")[0];
+        if (ipAddr.includes("::ffff:")) ipAddr = ipAddr.replace("::ffff:", "");
 
         let vnp_Params = {
             vnp_Version: "2.1.0",
@@ -64,13 +67,12 @@ export const createPayment = async (req, res) => {
         // ✅ SORT
         vnp_Params = sortObject(vnp_Params);
 
-        // ❗ QUAN TRỌNG: stringify encode = false
-        const signData = qs.stringify(vnp_Params, { encode: false });
+        // 🔥 FIX CHÍNH: SIGN PHẢI ENCODE
+        const signData = qs.stringify(vnp_Params, { encode: true });
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
-        // ✅ HASH
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(signData, "utf-8")
@@ -79,12 +81,13 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        // ❗ ADD HASH SAU KHI SIGN
+        // ADD HASH
         vnp_Params.vnp_SecureHashType = "HmacSHA512";
         vnp_Params.vnp_SecureHash = secureHash;
 
-        // ✅ URL encode TRUE
-        const paymentUrl = vnpUrl + "?" + qs.stringify(vnp_Params, { encode: true });
+        // URL (encode TRUE giống sign)
+        const paymentUrl =
+            vnpUrl + "?" + qs.stringify(vnp_Params, { encode: true });
 
         console.log("===== PAYMENT URL =====");
         console.log(paymentUrl);
@@ -108,7 +111,8 @@ export const vnpayIPN = async (req, res) => {
 
         vnp_Params = sortObject(vnp_Params);
 
-        const signData = qs.stringify(vnp_Params, { encode: false });
+        // 🔥 FIX: encode TRUE luôn
+        const signData = qs.stringify(vnp_Params, { encode: true });
 
         const checkHash = crypto
             .createHmac("sha512", secretKey)
