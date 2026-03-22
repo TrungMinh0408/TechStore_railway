@@ -12,12 +12,13 @@ const returnUrl =
 
 /* ================= SORT ================= */
 function sortObject(obj) {
-    const sorted = {};
-    Object.keys(obj)
-        .sort()
-        .forEach((key) => {
-            sorted[key] = obj[key];
-        });
+    let sorted = {};
+    let keys = Object.keys(obj).sort();
+
+    keys.forEach(key => {
+        sorted[key] = obj[key];
+    });
+
     return sorted;
 }
 
@@ -60,17 +61,16 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        // 🔥 SORT
+        // ✅ SORT
         vnp_Params = sortObject(vnp_Params);
 
-        // 🔥 SIGN DATA (QUAN TRỌNG NHẤT)
-        const signData = qs.stringify(vnp_Params, {
-            encode: false, // ❗ KHÔNG encode
-        });
+        // ❗ QUAN TRỌNG: stringify encode = false
+        const signData = qs.stringify(vnp_Params, { encode: false });
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
+        // ✅ HASH
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(signData, "utf-8")
@@ -79,20 +79,12 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        // 🔥 URL (encode thật)
-        const paymentUrl =
-            vnpUrl +
-            "?" +
-            qs.stringify(
-                {
-                    ...vnp_Params,
-                    vnp_SecureHashType: "HmacSHA512",
-                    vnp_SecureHash: secureHash,
-                },
-                {
-                    encode: true, // encode ở đây
-                }
-            );
+        // ❗ ADD HASH SAU KHI SIGN
+        vnp_Params.vnp_SecureHashType = "HmacSHA512";
+        vnp_Params.vnp_SecureHash = secureHash;
+
+        // ✅ URL encode TRUE
+        const paymentUrl = vnpUrl + "?" + qs.stringify(vnp_Params, { encode: true });
 
         console.log("===== PAYMENT URL =====");
         console.log(paymentUrl);
@@ -100,7 +92,7 @@ export const createPayment = async (req, res) => {
         return res.json({ paymentUrl });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message });
     }
 };
 
@@ -114,15 +106,8 @@ export const vnpayIPN = async (req, res) => {
         delete vnp_Params.vnp_SecureHash;
         delete vnp_Params.vnp_SecureHashType;
 
-        // 🔥 SORT
-        vnp_Params = Object.keys(vnp_Params)
-            .sort()
-            .reduce((obj, key) => {
-                obj[key] = vnp_Params[key];
-                return obj;
-            }, {});
+        vnp_Params = sortObject(vnp_Params);
 
-        // 🔥 SIGN DATA giống createPayment
         const signData = qs.stringify(vnp_Params, { encode: false });
 
         const checkHash = crypto
