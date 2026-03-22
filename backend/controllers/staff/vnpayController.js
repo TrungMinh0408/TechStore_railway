@@ -9,13 +9,28 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= SORT + BUILD ================= */
+/* ================= BUILD SIGN ================= */
+// 🔥 SIGN: encode + space => +
+function buildSignData(params) {
+    return Object.keys(params)
+        .sort()
+        .map(key => {
+            return (
+                key +
+                "=" +
+                encodeURIComponent(params[key]).replace(/%20/g, "+")
+            );
+        })
+        .join("&");
+}
+
+/* ================= BUILD URL ================= */
+// 🔥 URL: encode chuẩn (KHÔNG replace +)
 function buildQuery(params) {
     return Object.keys(params)
         .sort()
         .map(key => {
-            return key + "=" + encodeURI(params[key])
-                .replace(/%20/g, "+"); // giữ +
+            return key + "=" + encodeURIComponent(params[key]);
         })
         .join("&");
 }
@@ -38,13 +53,7 @@ export const createPayment = async (req, res) => {
             .replace(/[-:TZ.]/g, "")
             .slice(0, 14);
 
-        let ipAddr =
-            // req.headers["x-forwarded-for"] ||
-            // req.socket?.remoteAddress ||
-            "127.0.0.1";
-
-        if (ipAddr.includes(",")) ipAddr = ipAddr.split(",")[0];
-        if (ipAddr.includes("::ffff:")) ipAddr = ipAddr.replace("::ffff:", "");
+        const ipAddr = "127.0.0.1"; // giữ cố định cho sạch
 
         const vnp_Params = {
             vnp_Version: "2.1.0",
@@ -62,8 +71,8 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        // 🔥 SIGN DATA (CHUẨN)
-        const signData = buildQuery(vnp_Params);
+        // 🔥 SIGN DATA (QUAN TRỌNG NHẤT)
+        const signData = buildSignData(vnp_Params);
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
@@ -76,11 +85,11 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        // 🔥 FINAL URL (PHẢI GIỐNG SIGN)
+        // 🔥 URL (KHÁC SIGN)
         const paymentUrl =
             vnpUrl +
             "?" +
-            signData +
+            buildQuery(vnp_Params) +
             "&vnp_SecureHashType=HmacSHA512" +
             "&vnp_SecureHash=" +
             secureHash;
@@ -105,7 +114,8 @@ export const vnpayIPN = async (req, res) => {
         delete vnp_Params.vnp_SecureHash;
         delete vnp_Params.vnp_SecureHashType;
 
-        const signData = buildQuery(vnp_Params);
+        // 🔥 SIGN lại giống create
+        const signData = buildSignData(vnp_Params);
 
         const checkHash = crypto
             .createHmac("sha512", secretKey)
