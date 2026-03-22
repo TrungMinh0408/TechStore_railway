@@ -26,6 +26,8 @@ export const createPayment = async (req, res) => {
     try {
         const { amount } = req.body;
 
+        console.log("===== CREATE PAYMENT =====");
+
         const payment = await Payment.create({
             amount,
             method: "vnpay",
@@ -72,7 +74,7 @@ export const createPayment = async (req, res) => {
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
-        /* ================= HASH ================= */
+        /* ================= HASH (1 LẦN DUY NHẤT) ================= */
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(signData, "utf-8")
@@ -81,7 +83,7 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        /* ================= URL (CÓ ENCODE) ================= */
+        /* ================= PAYMENT URL (ENCODE Ở ĐÂY) ================= */
         const paymentUrl =
             vnpUrl +
             "?" +
@@ -99,13 +101,13 @@ export const createPayment = async (req, res) => {
 
         return res.json({ paymentUrl });
     } catch (err) {
-        console.error(err);
+        console.error("CREATE PAYMENT ERROR:", err);
         return res.status(500).json({ message: err.message });
     }
 };
 
-/* ================= IPN ================= */
-export const vnpayIPN = async (req, res) => {
+/* ================= RETURN URL ================= */
+export const vnpayReturn = async (req, res) => {
     try {
         let vnp_Params = { ...req.query };
 
@@ -126,10 +128,47 @@ export const vnpayIPN = async (req, res) => {
             .update(signData, "utf-8")
             .digest("hex");
 
+        console.log("===== RETURN DEBUG =====");
+        console.log("SIGN DATA:", signData);
+        console.log("VNPAY HASH:", secureHash);
+        console.log("SERVER HASH:", checkHash);
+
+        if (secureHash !== checkHash) {
+            return res.send("Sai chữ ký ❌");
+        }
+
+        return res.send("Thanh toán thành công ✅");
+    } catch (err) {
+        console.error(err);
+        return res.send("Lỗi");
+    }
+};
+
+/* ================= IPN ================= */
+export const vnpayIPN = async (req, res) => {
+    try {
+        let vnp_Params = { ...req.query };
+
+        const secureHash = vnp_Params.vnp_SecureHash;
+
+        delete vnp_Params.vnp_SecureHash;
+        delete vnp_Params.vnp_SecureHashType;
+
+        vnp_Params = sortObject(vnp_Params);
+
+        const signData = Object.keys(vnp_Params)
+            .map((key) => `${key}=${vnp_Params[key]}`)
+            .join("&");
+
+        const checkHash = crypto
+            .createHmac("sha512", secretKey)
+            .update(signData, "utf-8")
+            .digest("hex");
+
         console.log("===== IPN DEBUG =====");
-        console.log("SIGN:", signData);
-        console.log("VNPay:", secureHash);
-        console.log("CHECK:", checkHash);
+        console.log("SIGN DATA:", signData);
+        console.log("VNPAY HASH:", secureHash);
+        console.log("SERVER HASH:", checkHash);
 
         if (secureHash !== checkHash) {
             return res.json({ RspCode: "97", Message: "Invalid Signature" });
