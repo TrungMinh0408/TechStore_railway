@@ -9,8 +9,9 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= BUILD SIGN ================= */
-function buildSignData(params) {
+/* ================= BUILD DUY NHẤT ================= */
+// 🔥 DÙNG CHUNG CHO SIGN + URL
+function buildQuery(params) {
     return Object.keys(params)
         .sort()
         .map(key => {
@@ -19,16 +20,6 @@ function buildSignData(params) {
                 "=" +
                 encodeURIComponent(params[key]).replace(/%20/g, "+")
             );
-        })
-        .join("&");
-}
-
-/* ================= BUILD URL ================= */
-function buildQuery(params) {
-    return Object.keys(params)
-        .sort()
-        .map(key => {
-            return key + "=" + encodeURIComponent(params[key]);
         })
         .join("&");
 }
@@ -51,8 +42,6 @@ export const createPayment = async (req, res) => {
             .replace(/[-:TZ.]/g, "")
             .slice(0, 14);
 
-        const ipAddr = "127.0.0.1";
-
         const vnp_Params = {
             vnp_Version: "2.1.0",
             vnp_Command: "pay",
@@ -64,7 +53,7 @@ export const createPayment = async (req, res) => {
             vnp_OrderType: "other",
             vnp_Locale: "vn",
             vnp_ReturnUrl: returnUrl,
-            vnp_IpAddr: ipAddr,
+            vnp_IpAddr: "127.0.0.1",
             vnp_CreateDate: createDate,
             vnp_BankCode: "NCB",
         };
@@ -76,19 +65,15 @@ export const createPayment = async (req, res) => {
                 console.log(key + " =", vnp_Params[key]);
             });
 
-        const signData = buildSignData(vnp_Params);
+        // 🔥 CHUỖI DUY NHẤT
+        const query = buildQuery(vnp_Params);
 
-        console.log("========== SIGN DATA ==========");
-        console.log(signData);
-
-        const urlQuery = buildQuery(vnp_Params);
-
-        console.log("========== URL QUERY ==========");
-        console.log(urlQuery);
+        console.log("========== SIGN & URL BASE ==========");
+        console.log(query);
 
         const secureHash = crypto
             .createHmac("sha512", secretKey)
-            .update(signData, "utf-8")
+            .update(query, "utf-8")
             .digest("hex");
 
         console.log("========== HASH ==========");
@@ -97,7 +82,7 @@ export const createPayment = async (req, res) => {
         const paymentUrl =
             vnpUrl +
             "?" +
-            urlQuery +
+            query +
             "&vnp_SecureHashType=HmacSHA512" +
             "&vnp_SecureHash=" +
             secureHash;
@@ -129,15 +114,16 @@ export const vnpayIPN = async (req, res) => {
                 console.log(key + " =", vnp_Params[key]);
             });
 
-        const signData = buildSignData(vnp_Params);
+        // 🔥 DÙNG CÙNG HÀM
+        const query = buildQuery(vnp_Params);
 
         const checkHash = crypto
             .createHmac("sha512", secretKey)
-            .update(signData, "utf-8")
+            .update(query, "utf-8")
             .digest("hex");
 
         console.log("========== IPN DEBUG ==========");
-        console.log("SIGN DATA:", signData);
+        console.log("QUERY:", query);
         console.log("VNPay HASH:", secureHash);
         console.log("LOCAL HASH:", checkHash);
 
