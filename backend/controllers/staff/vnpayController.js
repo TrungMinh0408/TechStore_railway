@@ -4,20 +4,21 @@ import Payment from "../../models/payment.js";
 
 /* ================= CONFIG ================= */
 const tmnCode = "HOQSPK33";
-const secretKey = "BDNAIEK6P8RGMFXU9XOI55BNFRP60E4B";
+const secretKey = "BDNAIEK6P8RGMFXU9XOI55BNFRP60E4B".trim();
 const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
 const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
-/* ================= BUILD SIGN STRING (FIXED) ================= */
-function buildSignData(params) {
-    return Object.keys(params)
+/* ================= SORT ================= */
+function sortObject(obj) {
+    const sorted = {};
+    Object.keys(obj)
         .sort()
-        .map(k => {
-            return `${k}=${encodeURIComponent(params[k]).replace(/%20/g, "%20")}`;
-        })
-        .join("&");
+        .forEach((key) => {
+            sorted[key] = obj[key];
+        });
+    return sorted;
 }
 
 /* ================= CREATE PAYMENT ================= */
@@ -43,7 +44,7 @@ export const createPayment = async (req, res) => {
             req.socket?.remoteAddress ||
             "127.0.0.1";
 
-        const vnp_Params = {
+        let vnp_Params = {
             vnp_Version: "2.1.0",
             vnp_Command: "pay",
             vnp_TmnCode: tmnCode,
@@ -59,12 +60,16 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        /* ================= SIGN ================= */
-        const signData = buildSignData(vnp_Params);
+        // 🔥 SORT
+        vnp_Params = sortObject(vnp_Params);
+
+        // 🔥 SIGN DATA (KHÔNG ENCODE)
+        const signData = qs.stringify(vnp_Params, { encode: false });
 
         console.log("===== SIGN DATA =====");
         console.log(signData);
 
+        // 🔥 HASH
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(signData, "utf-8")
@@ -73,7 +78,7 @@ export const createPayment = async (req, res) => {
         console.log("===== HASH =====");
         console.log(secureHash);
 
-        /* ================= PAYMENT URL ================= */
+        // 🔥 FINAL URL (CÓ ENCODE)
         const paymentUrl =
             vnpUrl +
             "?" +
@@ -106,7 +111,9 @@ export const vnpayIPN = async (req, res) => {
         delete vnp_Params.vnp_SecureHash;
         delete vnp_Params.vnp_SecureHashType;
 
-        const signData = buildSignData(vnp_Params);
+        vnp_Params = sortObject(vnp_Params);
+
+        const signData = qs.stringify(vnp_Params, { encode: false });
 
         const checkHash = crypto
             .createHmac("sha512", secretKey)
