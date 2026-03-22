@@ -13,9 +13,10 @@ const returnUrl =
 /* ================= BUILD SIGN STRING (FIXED) ================= */
 function buildSignData(params) {
     return Object.keys(params)
-        .filter(k => params[k] !== undefined && params[k] !== null && params[k] !== "")
         .sort()
-        .map(k => `${k}=${encodeURIComponent(params[k]).replace(/%20/g, "+")}`)
+        .map(k => {
+            return `${k}=${encodeURIComponent(params[k]).replace(/%20/g, "%20")}`;
+        })
         .join("&");
 }
 
