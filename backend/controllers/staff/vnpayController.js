@@ -14,8 +14,8 @@ function buildQuery(params) {
     return Object.keys(params)
         .sort()
         .map(key => {
-            return key + "=" + encodeURIComponent(params[key])
-                .replace(/%20/g, "+"); // 🔥 FIX CHUẨN VNPay
+            return key + "=" + encodeURI(params[key])
+                .replace(/%20/g, "+"); // giữ +
         })
         .join("&");
 }
