@@ -10,7 +10,6 @@ const returnUrl =
     "https://techstorerailway-copy-production.up.railway.app/vnpay-return";
 
 /* ================= BUILD SIGN ================= */
-// 🔥 SIGN: encode + space => +
 function buildSignData(params) {
     return Object.keys(params)
         .sort()
@@ -25,7 +24,6 @@ function buildSignData(params) {
 }
 
 /* ================= BUILD URL ================= */
-// 🔥 URL: encode chuẩn (KHÔNG replace +)
 function buildQuery(params) {
     return Object.keys(params)
         .sort()
@@ -53,7 +51,7 @@ export const createPayment = async (req, res) => {
             .replace(/[-:TZ.]/g, "")
             .slice(0, 14);
 
-        const ipAddr = "127.0.0.1"; // giữ cố định cho sạch
+        const ipAddr = "127.0.0.1";
 
         const vnp_Params = {
             vnp_Version: "2.1.0",
@@ -71,30 +69,40 @@ export const createPayment = async (req, res) => {
             vnp_BankCode: "NCB",
         };
 
-        // 🔥 SIGN DATA (QUAN TRỌNG NHẤT)
+        console.log("========== RAW PARAMS ==========");
+        Object.keys(vnp_Params)
+            .sort()
+            .forEach(key => {
+                console.log(key + " =", vnp_Params[key]);
+            });
+
         const signData = buildSignData(vnp_Params);
 
-        console.log("===== SIGN DATA =====");
+        console.log("========== SIGN DATA ==========");
         console.log(signData);
+
+        const urlQuery = buildQuery(vnp_Params);
+
+        console.log("========== URL QUERY ==========");
+        console.log(urlQuery);
 
         const secureHash = crypto
             .createHmac("sha512", secretKey)
             .update(signData, "utf-8")
             .digest("hex");
 
-        console.log("===== HASH =====");
+        console.log("========== HASH ==========");
         console.log(secureHash);
 
-        // 🔥 URL (KHÁC SIGN)
         const paymentUrl =
             vnpUrl +
             "?" +
-            buildQuery(vnp_Params) +
+            urlQuery +
             "&vnp_SecureHashType=HmacSHA512" +
             "&vnp_SecureHash=" +
             secureHash;
 
-        console.log("===== PAYMENT URL =====");
+        console.log("========== FINAL URL ==========");
         console.log(paymentUrl);
 
         return res.json({ paymentUrl });
@@ -114,7 +122,13 @@ export const vnpayIPN = async (req, res) => {
         delete vnp_Params.vnp_SecureHash;
         delete vnp_Params.vnp_SecureHashType;
 
-        // 🔥 SIGN lại giống create
+        console.log("========== IPN RAW ==========");
+        Object.keys(vnp_Params)
+            .sort()
+            .forEach(key => {
+                console.log(key + " =", vnp_Params[key]);
+            });
+
         const signData = buildSignData(vnp_Params);
 
         const checkHash = crypto
@@ -122,10 +136,10 @@ export const vnpayIPN = async (req, res) => {
             .update(signData, "utf-8")
             .digest("hex");
 
-        console.log("===== IPN DEBUG =====");
-        console.log("SIGN:", signData);
-        console.log("VNPay:", secureHash);
-        console.log("CHECK:", checkHash);
+        console.log("========== IPN DEBUG ==========");
+        console.log("SIGN DATA:", signData);
+        console.log("VNPay HASH:", secureHash);
+        console.log("LOCAL HASH:", checkHash);
 
         if (secureHash !== checkHash) {
             return res.json({ RspCode: "97", Message: "Invalid Signature" });
